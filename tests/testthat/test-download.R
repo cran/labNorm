@@ -8,8 +8,7 @@ setup_test <- function(...) {
         unlink(file.path(default_dir, "UKBB"), recursive = TRUE)
     }
 
-    withr::defer(pkgenv$yesno2 <- yesno::yesno2)
-    pkgenv$yesno2 <- function(prompt) FALSE
+    mockery::stub(ln_download_data, "yesno2", FALSE, depth = 1)
 
     # Test function
     ln_download_data(...)
@@ -49,6 +48,13 @@ test_that("ln_download_data downloads to temp dir if not approved or if dir not 
     # Check that the quantile data was read and stored correctly
     expect_equal(load_quantiles("Clalit", "WBC"), readRDS(file.path(getOption("labNorm.dir"), "Clalit", "WBC.rds")))
     expect_equal(load_quantiles("UKBB", "WBC"), readRDS(file.path(getOption("labNorm.dir"), "UKBB", "WBC.rds")))
+})
 
-    pkgenv$yesno2 <- yesno::yesno2 # Reset the function
+test_that("ln_data_downloaded works", {
+    skip_on_cran()
+    clean_downloaded_data()
+    expect_false(ln_data_downloaded())
+
+    setup_test()
+    expect_true(ln_data_downloaded())
 })
